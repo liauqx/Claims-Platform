@@ -1,0 +1,21 @@
+<section class="notification-heading">
+  <div><div class="overline">YOUR UPDATES</div><h1>Notifications</h1><p>Important updates about your claims.</p></div>
+  <span class="inbox-icon">◌</span>
+</section>
+@if (error()) { <div class="notice-error" role="alert">{{ error() }}</div> }
+<section class="notification-panel">
+  <div class="panel-top"><div><strong>Recent notifications</strong><small>Updates from your claims team</small></div><span>{{ notifications().length }} total</span></div>
+  @if (loading()) {
+    <div class="empty-state">Loading notifications…</div>
+  } @else if (notifications().length === 0) {
+    <div class="empty-state"><span class="empty-icon">◌</span><strong>You're all caught up</strong><p>New claim updates will appear here.</p></div>
+  } @else {
+    @for (notification of notifications(); track notification.id) {
+      <article class="notification-item" [class.unread]="!notification.isRead">
+        <span class="notification-icon">{{ notification.title.toLowerCase().includes('information') ? '↗' : notification.title.toLowerCase().includes('assigned') ? '▤' : '◷' }}</span>
+        <div class="notification-copy"><div class="notification-title">{{ notification.title }} @if (!notification.isRead) { <span class="unread-dot"></span> }</div><p>{{ notification.message }}</p><small>{{ notification.createdAt | date:'medium' }}</small></div>
+        <div class="notification-actions">@if (notification.claimId) { <a [routerLink]="['/claims', notification.claimId]">View claim</a> } @if (!notification.isRead) { <button type="button" (click)="markRead(notification)">Mark read</button> }</div>
+      </article>
+    }
+  }
+</section>

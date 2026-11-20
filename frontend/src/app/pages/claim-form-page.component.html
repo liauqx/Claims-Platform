@@ -1,0 +1,50 @@
+<a class="back-link" routerLink="/claims">← Back to claims</a>
+
+@if (loading()) {
+  <div class="form-loading">Loading claim…</div>
+} @else {
+  <section class="form-heading">
+    <div class="overline">{{ isNew ? 'REPORT AN INCIDENT' : role === 'CLAIMANT' ? 'CLAIM DETAILS' : 'CLAIM ASSESSMENT' }}</div>
+    <h1>{{ isNew ? 'Start a new claim' : role === 'CLAIMANT' ? 'Edit your claim' : 'Assess claim' }}</h1>
+    <p>{{ isNew ? 'Tell us what happened. You can add supporting documents after submission.' : claim()?.claimNumber }}</p>
+  </section>
+
+  @if (error()) { <div class="form-error" role="alert">{{ error() }}</div> }
+
+  @if (isNew || canEditClaimantDetails || canAssess) {
+    <form class="claim-form" (ngSubmit)="submit()" #claimForm="ngForm">
+      @if (isNew) {
+        <div class="section-title"><span>01</span><div><strong>Incident details</strong><small>Share the essential details of what happened.</small></div></div>
+        <div class="field-grid">
+          <label class="form-field"><span>Claim type <b>*</b></span><select name="claimType" [(ngModel)]="claimType"><option value="MOTOR">Motor</option><option value="PROPERTY">Property</option></select></label>
+          <label class="form-field"><span>Incident date <b>*</b></span><input name="incidentDate" type="date" [(ngModel)]="incidentDate" [max]="today" required /></label>
+        </div>
+        <label class="form-field"><span>What happened? <b>*</b></span><textarea name="description" [(ngModel)]="description" required minlength="1" maxlength="10000" rows="5" placeholder="Describe the incident, including where and when it happened…"></textarea><small>Be as specific as you can. This helps us assess your claim.</small></label>
+        <label class="form-field amount-field"><span>Estimated loss amount <b>*</b></span><div class="money-input"><input name="estimatedAmount" type="number" [(ngModel)]="estimatedAmount" required min="0.01" max="9999999999999.99" step="0.01" placeholder="0.00" /></div></label>
+      } @else if (canEditClaimantDetails) {
+        <div class="section-title"><span>01</span><div><strong>Update claim details</strong><small>Only submitted claims can be edited.</small></div></div>
+        <div class="read-only-summary"><span>{{ claim()?.claimType === 'MOTOR' ? 'Motor' : 'Property' }}</span><span>Incident {{ claim()?.incidentDate | date:'mediumDate' }}</span></div>
+        <label class="form-field"><span>What happened? <b>*</b></span><textarea name="description" [(ngModel)]="description" required minlength="1" maxlength="10000" rows="5"></textarea></label>
+        <label class="form-field amount-field"><span>Estimated loss amount <b>*</b></span><div class="money-input"><input name="estimatedAmount" type="number" [(ngModel)]="estimatedAmount" required min="0.01" max="9999999999999.99" step="0.01" /></div></label>
+      } @else {
+        <div class="section-title"><span>01</span><div><strong>Assessment decision</strong><small>Current status: {{ claim()?.status?.replaceAll('_', ' ') }}</small></div></div>
+        @if (canAssess) {
+          <label class="form-field"><span>Update status <b>*</b></span><select name="nextStatus" [(ngModel)]="nextStatus" required><option value="">Select a decision</option>@for (status of availableStatuses; track status) { <option [value]="status">{{ statusLabel(status) }}</option> }</select></label>
+          @if (nextStatus === 'APPROVED' || nextStatus === 'SETTLED') {
+            <label class="form-field"><span>Approved amount <b>*</b></span><div class="money-input"><input name="approvedAmount" type="number" [(ngModel)]="approvedAmount" required min="0.01" max="9999999999999.99" step="0.01" /></div></label>
+          }
+          <label class="form-field"><span>Assessment notes</span><textarea name="remarks" [(ngModel)]="remarks" maxlength="2000" rows="4" placeholder="Add a note to the claim history…"></textarea><small>These notes appear in the claim history.</small></label>
+        } @else {
+          <div class="form-error">This claim is not assigned to you. Pick it up from the claims queue before assessing it.</div>
+        }
+      }
+
+      <div class="form-actions">
+        <a class="button button-muted" [routerLink]="isNew ? '/claims' : ['/claims', claim()?.id]">Cancel</a>
+        <button class="button button-primary" type="submit" [disabled]="claimForm.invalid || saving() || (!isNew && !canEditClaimantDetails && !canAssess)">
+          {{ saving() ? 'Saving…' : isNew ? 'Submit claim' : canAssess ? 'Save assessment' : 'Save changes' }} <span>→</span>
+        </button>
+      </div>
+    </form>
+  }
+}

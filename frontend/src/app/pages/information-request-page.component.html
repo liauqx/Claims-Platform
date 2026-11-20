@@ -1,0 +1,19 @@
+<a class="back-link" [routerLink]="claim() ? ['/claims', claim()?.id] : '/claims'">← Back to claim</a>
+@if (loading()) {
+  <div class="request-loading">Loading claim…</div>
+} @else {
+  @if (claim(); as claim) {
+  <section class="request-heading">
+    <div class="overline">CLAIMS TEAM · FOLLOW-UP</div>
+    <h1>Request information</h1>
+    <p>Ask the claimant for a document or detail needed to continue the assessment.</p>
+  </section>
+  @if (error()) { <div class="form-error" role="alert">{{ error() }}</div> }
+  <form class="request-form" (ngSubmit)="submit()" #requestForm="ngForm">
+    <div class="claim-context"><span class="context-icon">▤</span><div><small>CLAIM</small><strong>{{ claim.claimNumber }}</strong><span>{{ claim.claimType }} · Incident {{ claim.incidentDate | date:'mediumDate' }}</span></div></div>
+    <label class="form-field"><span>What do you need from the claimant? <b>*</b></span><textarea name="description" [(ngModel)]="description" required minlength="1" maxlength="4000" rows="6" placeholder="For example: Please upload a copy of the repair estimate…"></textarea><small>Be specific about the information or documents needed.</small></label>
+    <div class="request-note"><span>i</span><p>The claimant will receive a notification and can respond from their claim details page.</p></div>
+    <div class="form-actions"><a class="button button-muted" [routerLink]="['/claims', claim.id]">Cancel</a><button class="button button-primary" type="submit" [disabled]="requestForm.invalid || saving()">{{ saving() ? 'Sending…' : 'Send request' }} <span>→</span></button></div>
+  </form>
+  }
+}

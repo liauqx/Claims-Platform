@@ -160,6 +160,8 @@ public sealed class ClaimsController(
             return Conflict(new ProblemDetails { Title = "Assign this claim to yourself before assessing it." });
         }
 
+        var claimDetailsChanged = request.Description is not null || request.EstimatedAmount is not null;
+        var statusChanged = false;
         if (request.Description is null &&
             request.EstimatedAmount is null &&
             request.Status is null &&
@@ -224,6 +226,7 @@ public sealed class ClaimsController(
 
             var oldStatus = claim.Status;
             claim.Status = newStatus;
+            statusChanged = true;
             if (newStatus is ClaimStatus.APPROVED or ClaimStatus.REJECTED or ClaimStatus.SETTLED)
             {
                 var pendingRequests = await db.ClaimInformationRequests
@@ -252,6 +255,21 @@ public sealed class ClaimsController(
                 claim.Id,
                 "Claim status updated",
                 $"Claim {claim.ClaimNumber} is now {newStatus}.");
+        }
+
+        if (!statusChanged && (claimDetailsChanged || request.ApprovedAmount is not null))
+        {
+            db.ClaimHistories.Add(new ClaimHistory
+            {
+                Id = Guid.NewGuid(),
+                ClaimId = claim.Id,
+                ChangedBy = userId,
+                OldStatus = claim.Status,
+                NewStatus = claim.Status,
+                Remarks = request.Remarks?.Trim() ??
+                    (claimDetailsChanged ? "Claim details updated." : "Approved amount updated."),
+                CreatedAt = CurrentDatabaseTimestamp()
+            });
         }
 
         claim.UpdatedAt = CurrentDatabaseTimestamp();

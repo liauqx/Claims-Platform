@@ -15,6 +15,11 @@ builder.Services
     .AddControllers()
     .AddJsonOptions(options =>
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()));
+builder.Services.AddCors(options => options.AddPolicy("AngularDevelopment", policy =>
+    policy
+        .WithOrigins("http://localhost:4200", "http://127.0.0.1:4200")
+        .AllowAnyHeader()
+        .AllowAnyMethod()));
 
 var connectionString = builder.Configuration.GetConnectionString("ClaimsDatabase");
 if (string.IsNullOrWhiteSpace(connectionString))
@@ -67,6 +72,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors("AngularDevelopment");
 app.UseAuthentication();
 app.UseAuthorization();
 

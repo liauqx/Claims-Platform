@@ -1,0 +1,95 @@
+<section class="page-heading">
+  <div>
+    <div class="overline">{{ role === 'CLAIMANT' ? 'YOUR CLAIMS' : role === 'MANAGER' ? 'TEAM OVERVIEW' : 'CLAIMS WORKSPACE' }}</div>
+    <h1>{{ role === 'CLAIMANT' ? 'My claims' : role === 'MANAGER' ? 'All claims' : 'Claims queue' }}</h1>
+    <p>{{ role === 'CLAIMANT' ? 'A clear view of where things stand.' : role === 'MANAGER' ? 'Monitor and assign incoming claims.' : 'Pick up a claim and move it forward.' }}</p>
+  </div>
+  @if (role === 'CLAIMANT') {
+    <a class="button button-primary" routerLink="/claims/new"><span>＋</span> New claim</a>
+  }
+</section>
+
+<section class="metric-row" aria-label="Claim summary">
+  <article class="metric-card"><span class="metric-mark mark-blue">▤</span><div><small>{{ role === 'CLAIMANT' ? 'TOTAL CLAIMS' : 'VISIBLE CLAIMS' }}</small><strong>{{ totalCount }}</strong></div></article>
+  <article class="metric-card"><span class="metric-mark mark-amber">◷</span><div><small>IN PROGRESS</small><strong>{{ claims().filter(isOpen).length }}</strong></div></article>
+  <article class="metric-card"><span class="metric-mark mark-green">✓</span><div><small>RESOLVED</small><strong>{{ claims().filter(isResolved).length }}</strong></div></article>
+  <div class="metric-note"><span class="metric-live"></span> Live workload <span class="metric-note-date">Updated just now</span></div>
+</section>
+
+<section class="claims-panel">
+  <div class="panel-top">
+    <div><h2>{{ role === 'CLAIMANT' ? 'Recent claims' : 'Claim register' }}</h2><p>{{ totalCount }} {{ totalCount === 1 ? 'claim' : 'claims' }} in your view</p></div>
+    <div class="filters">
+      <label class="search-box"><span>⌕</span><input type="search" aria-label="Search claims" placeholder="Search claims…" [(ngModel)]="search" (ngModelChange)="clearMessages()" /></label>
+      <select aria-label="Filter by status" [(ngModel)]="statusFilter">
+        <option value="">All statuses</option>
+        <option value="SUBMITTED">Submitted</option><option value="UNDER_REVIEW">Under review</option>
+        <option value="MORE_INFO_REQUIRED">More info required</option><option value="APPROVED">Approved</option>
+        <option value="REJECTED">Rejected</option><option value="SETTLED">Settled</option>
+      </select>
+    </div>
+  </div>
+
+  @if (error()) { <div class="notice notice-error" role="alert">{{ error() }}</div> }
+  @if (success()) { <div class="notice notice-success" role="status">{{ success() }}</div> }
+
+  @if (loading()) {
+    <div class="loading-state"><span class="spinner"></span>Loading your claims…</div>
+  } @else if (filteredClaims.length === 0) {
+    <div class="empty-state">
+      <span class="empty-icon">▤</span>
+      <strong>{{ search || statusFilter ? 'No matching claims' : 'No claims yet' }}</strong>
+      <p>{{ role === 'CLAIMANT' && !search && !statusFilter ? 'When you report an incident, your claim will appear here.' : 'Try a different search or status filter.' }}</p>
+      @if (role === 'CLAIMANT' && !search && !statusFilter) { <a routerLink="/claims/new" class="button button-primary">Start a claim</a> }
+    </div>
+  } @else {
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>CLAIM</th><th>TYPE</th><th>INCIDENT DATE</th><th>EST. AMOUNT</th><th>STATUS</th><th>ASSIGNEE</th><th class="actions-heading">ACTIONS</th></tr></thead>
+        <tbody>
+          @for (claim of filteredClaims; track claim.id) {
+            <tr>
+              <td><a class="claim-link" [routerLink]="['/claims', claim.id]">{{ claim.claimNumber }}</a><small class="claim-created">Filed {{ claim.createdAt | date:'mediumDate' }}</small></td>
+              <td><span class="type-cell"><span class="type-dot" [class.property-dot]="claim.claimType === 'PROPERTY'"></span>{{ claim.claimType === 'MOTOR' ? 'Motor' : 'Property' }}</span></td>
+              <td>{{ claim.incidentDate | date:'mediumDate' }}</td>
+              <td class="amount-cell">{{ claim.estimatedAmount | number:'1.2-2' }}</td>
+              <td><span class="status-badge" [class]="'status-badge status-' + claim.status.toLowerCase()"><span></span>{{ statusLabel(claim.status) }}</span></td>
+              <td>
+                @if (role === 'MANAGER' && !isClosed(claim.status)) {
+                  <div class="assign-control">
+                    <select [attr.aria-label]="'Assign ' + claim.claimNumber" [(ngModel)]="assignments[claim.id]">
+                      <option value="">Select officer</option>
+                      @for (officer of officers(); track officer.id) { <option [value]="officer.id">{{ officer.fullName }}</option> }
+                    </select>
+                    <button class="assign-button" type="button" (click)="assignClaim(claim)" [disabled]="!assignments[claim.id]">Assign</button>
+                  </div>
+                } @else if (claim.assignedOfficerId) {
+                  <span class="assignee-tag">{{ claim.assignedOfficerId === auth.user()?.id ? 'You' : (claim.assignedOfficerId | slice:0:8) }}</span>
+                } @else { <span class="unassigned">Unassigned</span> }
+              </td>
+              <td class="row-actions">
+                <a class="text-action" [routerLink]="['/claims', claim.id]">View</a>
+                @if (role === 'CLAIMANT' && claim.status === 'SUBMITTED') {
+                  <a class="text-action" [routerLink]="['/claims', claim.id, 'edit']">Edit</a>
+                  <button class="text-action danger-action" type="button" (click)="deleteClaim(claim)">Delete</button>
+                }
+                @if (role === 'OFFICER' && claim.assignedOfficerId === null && claim.status === 'SUBMITTED') {
+                  <button class="text-action" type="button" (click)="pickUpClaim(claim)">Pick up</button>
+                }
+                @if (role === 'OFFICER' && claim.assignedOfficerId === auth.user()?.id && !isClosed(claim.status)) {
+                  <a class="text-action" [routerLink]="['/claims', claim.id, 'edit']">Assess</a>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <div class="table-footer">
+      <span>Showing {{ (page - 1) * pageSize + 1 }}–{{ (page - 1) * pageSize + filteredClaims.length }} of {{ totalCount }}</span>
+      <div class="pager"><button type="button" (click)="setPage(page - 1)" [disabled]="page <= 1">← Previous</button><span>Page {{ page }} of {{ totalPages }}</span><button type="button" (click)="setPage(page + 1)" [disabled]="page >= totalPages">Next →</button></div>
+    </div>
+  }
+</section>
+
+<div class="claims-footnote"><span class="footnote-lock">◇</span> Your claim details are private and only visible to you and your claims team.</div>

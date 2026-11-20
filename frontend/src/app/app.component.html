@@ -1,0 +1,50 @@
+@if (auth.user(); as user) {
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" routerLink="/claims" aria-label="Claims portal home">
+        <span class="brand-mark">C</span>
+        <span class="brand-copy"><strong>Claims</strong><small>claims portal</small></span>
+      </a>
+
+      <div class="workspace-label">WORKSPACE</div>
+      <nav class="side-nav" aria-label="Main navigation">
+        <a routerLink="/claims" routerLinkActive="active">
+          <span class="nav-icon">▤</span><span>{{ user.role === 'CLAIMANT' ? 'My claims' : 'Claims' }}</span>
+        </a>
+        <a routerLink="/notifications" routerLinkActive="active">
+          <span class="nav-icon">◌</span><span>Notifications</span>
+          @if (unreadCount() > 0) { <span class="nav-count">{{ unreadCount() }}</span> }
+        </a>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <div class="help-card">
+          <span class="help-icon">?</span>
+          <div><strong>Need a hand?</strong><small>Contact your claims team</small></div>
+        </div>
+        <div class="profile">
+          <div class="avatar">{{ user.fullName.charAt(0).toUpperCase() }}</div>
+          <div class="profile-copy"><strong>{{ user.fullName }}</strong><small>{{ user.role }}</small></div>
+          <button class="icon-button logout-button" type="button" aria-label="Sign out" (click)="logout()">↗</button>
+        </div>
+      </div>
+    </aside>
+
+    <div class="main-column">
+      <header class="topbar">
+        <div class="breadcrumb"><span>Claims</span><span class="breadcrumb-separator">/</span><strong>APAC portal</strong></div>
+        <div class="topbar-right">
+          <span class="market-label"><span class="live-dot"></span> APAC · Secure portal</span>
+          <a class="topbar-avatar" routerLink="/notifications" aria-label="View notifications">
+            {{ user.fullName.charAt(0).toUpperCase() }}
+            @if (unreadCount() > 0) { <span class="avatar-dot"></span> }
+          </a>
+        </div>
+      </header>
+      <main class="page-content"><router-outlet /></main>
+      <footer class="footer"><span>Claims Portal</span><span>Secure · Confidential</span></footer>
+    </div>
+  </div>
+} @else {
+  <router-outlet />
+}

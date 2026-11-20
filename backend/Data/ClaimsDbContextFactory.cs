@@ -8,7 +8,7 @@ public sealed class ClaimsDbContextFactory : IDesignTimeDbContextFactory<ClaimsD
     public ClaimsDbContext CreateDbContext(string[] args)
     {
         var options = new DbContextOptionsBuilder<ClaimsDbContext>()
-            .UseNpgsql("Host=localhost;Database=claimDB")
+            .UseNpgsql("Host=localhost;Database=ClaimDB")
             .Options;
 
         return new ClaimsDbContext(options);

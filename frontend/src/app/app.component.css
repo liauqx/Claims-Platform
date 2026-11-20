@@ -1,0 +1,85 @@
+.app-shell {
+  min-height: 100vh;
+  background: #f5f7fa;
+}
+
+.sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 5;
+  display: flex;
+  width: 252px;
+  flex-direction: column;
+  padding: 27px 18px 17px;
+  color: #dce5ef;
+  background: #10243a;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 0 9px 36px;
+  color: #fff;
+  text-decoration: none;
+}
+
+.brand-mark {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid #d6aa59;
+  border-radius: 12px;
+  color: #f3c66e;
+  font-family: Georgia, serif;
+  font-size: 23px;
+}
+
+.brand-copy { display: grid; line-height: 1; }
+.brand-copy strong { font-family: Georgia, serif; font-size: 23px; letter-spacing: 1px; }
+.brand-copy small { margin-top: 5px; color: #a9bacb; font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; }
+.workspace-label { padding: 0 12px 10px; color: #8798aa; font-size: 10px; font-weight: 700; letter-spacing: 1.3px; }
+.side-nav { display: grid; gap: 6px; }
+.side-nav a { display: flex; min-height: 43px; align-items: center; gap: 12px; padding: 0 12px; border-radius: 8px; color: #c1ccda; font-size: 13px; font-weight: 550; text-decoration: none; transition: background .16s ease, color .16s ease; }
+.side-nav a:hover, .side-nav a.active { color: #fff; background: #203b56; }
+.side-nav a.active { box-shadow: inset 3px 0 #e5b253; }
+.nav-icon { width: 19px; color: #98afc4; font-size: 18px; text-align: center; }
+.nav-count { display: grid; min-width: 20px; height: 20px; place-items: center; margin-left: auto; padding: 0 5px; border-radius: 12px; color: #182b3d; background: #e8ba65; font-size: 10px; font-weight: 800; }
+.sidebar-bottom { margin-top: auto; }
+.help-card { display: flex; align-items: center; gap: 10px; margin: 0 3px 19px; padding: 12px 10px; border: 1px solid #2a4057; border-radius: 9px; background: #162d44; }
+.help-icon { display: grid; width: 25px; height: 25px; place-items: center; border-radius: 50%; color: #f1c36d; background: #2b4259; font-size: 12px; font-weight: 700; }
+.help-card div, .profile-copy { display: grid; gap: 4px; }
+.help-card strong, .profile strong { color: #edf2f7; font-size: 11px; }
+.help-card small, .profile small { color: #98aabc; font-size: 10px; }
+.profile { display: flex; align-items: center; gap: 10px; padding: 15px 3px 0; border-top: 1px solid #2b4056; }
+.avatar, .topbar-avatar { display: grid; width: 33px; height: 33px; flex: 0 0 auto; place-items: center; border-radius: 50%; color: #163047; background: #e7c173; font-size: 12px; font-weight: 800; }
+.profile-copy { min-width: 0; }
+.profile-copy strong { overflow: hidden; max-width: 144px; text-overflow: ellipsis; white-space: nowrap; }
+.icon-button { border: 0; color: inherit; background: transparent; cursor: pointer; }
+.logout-button { margin-left: auto; color: #9aabba; font-size: 17px; }
+.main-column { min-height: 100vh; margin-left: 252px; }
+.topbar { position: sticky; top: 0; z-index: 3; display: flex; height: 62px; align-items: center; justify-content: space-between; padding: 0 42px; border-bottom: 1px solid #e8edf2; background: rgb(255 255 255 / 94%); backdrop-filter: blur(12px); }
+.breadcrumb { display: flex; align-items: center; gap: 11px; color: #8997a5; font-size: 12px; }
+.breadcrumb strong { color: #44566a; font-weight: 600; }
+.breadcrumb-separator { color: #c1cad3; }
+.topbar-right { display: flex; align-items: center; gap: 21px; }
+.market-label { display: flex; align-items: center; gap: 7px; color: #728195; font-size: 11px; }
+.live-dot { width: 7px; height: 7px; border-radius: 50%; background: #40a879; box-shadow: 0 0 0 3px #e8f5ee; }
+.topbar-avatar { position: relative; width: 31px; height: 31px; text-decoration: none; }
+.avatar-dot { position: absolute; top: -1px; right: -1px; width: 9px; height: 9px; border: 2px solid white; border-radius: 50%; background: #dc6357; }
+.page-content { width: min(1120px, 100%); min-height: calc(100vh - 105px); margin: 0 auto; padding: 37px 42px 54px; }
+.footer { display: flex; justify-content: space-between; padding: 0 42px 22px; color: #96a2af; font-size: 10px; }
+
+@media (max-width: 760px) {
+  .sidebar { position: sticky; inset: 0 0 auto; width: 100%; height: auto; padding: 12px 14px; }
+  .brand { padding: 0 4px 12px; }
+  .workspace-label, .sidebar-bottom, .help-card { display: none; }
+  .side-nav { grid-template-columns: repeat(2, 1fr); }
+  .side-nav a { min-height: 37px; padding: 0 8px; }
+  .main-column { margin-left: 0; }
+  .topbar { height: 49px; padding: 0 17px; }
+  .market-label { display: none; }
+  .page-content { min-height: calc(100vh - 160px); padding: 25px 17px 38px; }
+  .footer { padding: 0 17px 16px; }
+}

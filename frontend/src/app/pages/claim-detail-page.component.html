@@ -1,0 +1,94 @@
+<a class="back-link" routerLink="/claims">← Back to claims</a>
+
+@if (loading()) {
+  <div class="detail-loading">Loading claim…</div>
+} @else {
+  @if (claim(); as claim) {
+  <section class="detail-heading">
+    <div>
+      <div class="overline">{{ claim.claimType }} CLAIM</div>
+      <h1>{{ claim.claimNumber }}</h1>
+      <p>Submitted {{ claim.createdAt | date:'longDate' }} <span class="heading-dot">·</span> Last updated {{ claim.updatedAt | date:'mediumDate' }}</p>
+    </div>
+    <div class="heading-actions">
+      <span class="status-badge" [class]="'status-badge status-' + claim.status.toLowerCase()"><span></span>{{ statusLabel(claim.status) }}</span>
+      @if (isClaimant && claim.status === 'SUBMITTED') { <a class="button button-muted" [routerLink]="['/claims', claim.id, 'edit']">Edit claim</a> }
+      @if (role === 'OFFICER' && claim.assignedOfficerId === null && claim.status === 'SUBMITTED') { <button class="button button-primary" type="button" (click)="pickUpClaim()">Pick up claim</button> }
+      @if (role === 'OFFICER' && claim.assignedOfficerId === auth.user()?.id && claim.status !== 'REJECTED' && claim.status !== 'SETTLED') { <a class="button button-primary" [routerLink]="['/claims', claim.id, 'edit']">Assess claim</a> }
+      @if (role === 'MANAGER' && claim.status !== 'REJECTED' && claim.status !== 'SETTLED') { <a class="button button-primary" [routerLink]="['/claims', claim.id, 'edit']">Update status</a> }
+    </div>
+  </section>
+
+  @if (error()) { <div class="notice notice-error" role="alert">{{ error() }}</div> }
+  @if (success()) { <div class="notice notice-success" role="status">{{ success() }}</div> }
+
+  <section class="overview-grid">
+    <article class="overview-card"><small>CLAIM TYPE</small><strong>{{ claim.claimType === 'MOTOR' ? 'Motor' : 'Property' }}</strong><span>Incident {{ claim.incidentDate | date:'mediumDate' }}</span></article>
+    <article class="overview-card"><small>ESTIMATED AMOUNT</small><strong>{{ claim.estimatedAmount | number:'1.2-2' }}</strong><span>Submitted estimate</span></article>
+    <article class="overview-card"><small>APPROVED AMOUNT</small><strong>{{ claim.approvedAmount === null ? '—' : (claim.approvedAmount | number:'1.2-2') }}</strong><span>{{ claim.approvedAmount === null ? 'Pending assessment' : 'Final assessment' }}</span></article>
+  </section>
+
+  <div class="detail-layout">
+    <div class="detail-main">
+      <section class="detail-card incident-card">
+        <div class="card-heading"><div><span class="card-kicker">CLAIM SUMMARY</span><h2>Incident description</h2></div><span class="summary-icon">✳</span></div>
+        <p class="description">{{ claim.description }}</p>
+        <div class="claim-facts"><span><small>Claimant</small><strong>{{ claim.claimantId === auth.user()?.id ? 'You' : (claim.claimantId | slice:0:8) }}</strong></span><span><small>Assigned officer</small><strong>{{ claim.assignedOfficerId ? (claim.assignedOfficerId === auth.user()?.id ? 'You' : (claim.assignedOfficerId | slice:0:8)) : 'Not assigned' }}</strong></span></div>
+      </section>
+
+      <section class="detail-card">
+        <div class="card-heading"><div><span class="card-kicker">CLAIM ACTIVITY</span><h2>History</h2></div><span class="card-count">{{ history().length }}</span></div>
+        @if (history().length === 0) { <p class="muted-empty">No activity recorded yet.</p> }
+        <div class="timeline">
+          @for (item of history(); track item.id) {
+            <article class="timeline-item">
+              <span class="timeline-dot"></span>
+              <div><div class="timeline-title">{{ item.oldStatus ? statusLabel(item.oldStatus) + ' → ' : '' }}{{ statusLabel(item.newStatus) }}</div>
+                <p>{{ item.remarks || 'Claim updated.' }}</p>
+                <small>{{ item.createdAt | date:'medium' }} <span>·</span> {{ item.changedBy === auth.user()?.id ? 'You' : 'Claims team' }}</small>
+              </div>
+            </article>
+          }
+        </div>
+      </section>
+
+      <section class="detail-card">
+        <div class="card-heading"><div><span class="card-kicker">SUPPORTING FILES</span><h2>Documents</h2></div><span class="card-count">{{ documents().length }}</span></div>
+        @if (canUploadDocuments) {
+          <label class="upload-zone"><span class="upload-icon">↑</span><span><strong>Add a document</strong><small>PDF, PNG or JPEG · up to 10 MB</small></span><input type="file" accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg" (change)="uploadDocument($event)" /></label>
+        }
+        @if (documents().length === 0) { <p class="muted-empty">No documents uploaded yet.</p> }
+        <div class="document-list">
+          @for (document of documents(); track document.id) {
+            <article class="document-row"><span class="file-icon">▧</span><div class="document-copy"><strong>{{ document.fileName }}</strong><small>Added {{ document.uploadedAt | date:'mediumDate' }}</small></div><button class="text-action" type="button" (click)="downloadDocument(document)">Download</button>@if (canDeleteDocuments) { <button class="delete-file" type="button" [attr.aria-label]="'Delete ' + document.fileName" (click)="deleteDocument(document)">×</button> }</article>
+          }
+        </div>
+      </section>
+    </div>
+
+    <aside class="detail-side">
+      <section class="detail-card request-card">
+        <div class="card-heading"><div><span class="card-kicker">FOLLOW-UP</span><h2>Information requests</h2></div><span class="card-count">{{ requests().length }}</span></div>
+        @if (canStaffWork && (claim.status === 'UNDER_REVIEW' || claim.status === 'MORE_INFO_REQUIRED')) {
+          <a class="request-action" [routerLink]="['/claims', claim.id, 'request-info']"><span>＋</span> Request information</a>
+        }
+        @if (requests().length === 0) { <p class="muted-empty">There are no information requests.</p> }
+        <div class="request-list">
+          @for (request of requests(); track request.id) {
+            <article class="request-item">
+              <div class="request-top"><span class="request-status" [class.request-pending]="request.status === 'PENDING'">{{ requestStatusLabel(request.status) }}</span><small>{{ request.createdAt | date:'mediumDate' }}</small></div>
+              <p class="request-description">{{ request.description }}</p>
+              @if (request.response) { <div class="request-response"><small>CLAIMANT RESPONSE</small><p>{{ request.response }}</p></div> }
+              @if (isClaimant && request.status === 'PENDING') {
+                <label class="response-field"><span>Your response</span><textarea [(ngModel)]="responseDrafts[request.id]" rows="3" placeholder="Provide the requested information…"></textarea></label>
+                <button class="button button-primary response-submit" type="button" [disabled]="!hasResponse(request.id)" (click)="submitResponse(request)">Send response</button>
+              }
+            </article>
+          }
+        </div>
+      </section>
+      <div class="privacy-note"><span>◇</span><div><strong>Your information is private</strong><small>Only you and your claims team can view this claim.</small></div></div>
+    </aside>
+  </div>
+  }
+}
