@@ -7,8 +7,15 @@ public sealed class ClaimsDbContextFactory : IDesignTimeDbContextFactory<ClaimsD
 {
     public ClaimsDbContext CreateDbContext(string[] args)
     {
+        var configuration = new ConfigurationBuilder()
+            .AddUserSecrets<ClaimsDbContextFactory>(optional: true)
+            .AddEnvironmentVariables()
+            .Build();
+        var connectionString = configuration.GetConnectionString("ClaimsDatabase")
+            ?? throw new InvalidOperationException(
+                "Database connection string is missing. Configure ConnectionStrings__ClaimsDatabase.");
         var options = new DbContextOptionsBuilder<ClaimsDbContext>()
-            .UseNpgsql("Host=localhost;Database=ClaimDB")
+            .UseNpgsql(connectionString)
             .Options;
 
         return new ClaimsDbContext(options);

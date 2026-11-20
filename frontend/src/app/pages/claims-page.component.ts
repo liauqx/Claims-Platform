@@ -137,7 +137,9 @@ export class ClaimsPageComponent implements OnInit {
   }
 
   isResolved(claim: Claim): boolean {
-    return this.isClosed(claim.status);
+    return claim.status === 'APPROVED' ||
+      claim.status === 'REJECTED' ||
+      claim.status === 'SETTLED';
   }
 
   clearMessages(): void {
