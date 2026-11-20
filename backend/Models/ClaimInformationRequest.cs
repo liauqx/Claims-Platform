@@ -6,6 +6,7 @@ public class ClaimInformationRequest
     public Guid ClaimId { get; set; }
     public Guid RequestedBy { get; set; }
     public required string Description { get; set; }
+    public string? Response { get; set; }
     public InformationRequestStatus Status { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? RespondedAt { get; set; }

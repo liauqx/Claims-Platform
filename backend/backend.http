@@ -1,6 +1,70 @@
 @backend_HostAddress = http://localhost:5266
+@accessToken = replace-with-access-token
+@claimId = replace-with-claim-id
 
-GET {{backend_HostAddress}}/weatherforecast/
+GET {{backend_HostAddress}}/api/health
 Accept: application/json
 
 ###
+
+POST {{backend_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "fullName": "Example Claimant",
+  "email": "claimant@example.com",
+  "password": "replace-with-a-strong-password"
+}
+
+###
+
+POST {{backend_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "claimant@example.com",
+  "password": "replace-with-a-strong-password"
+}
+
+###
+
+GET {{backend_HostAddress}}/api/claims
+Authorization: Bearer {{accessToken}}
+Accept: application/json
+
+###
+
+POST {{backend_HostAddress}}/api/claims
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "claimType": "MOTOR",
+  "incidentDate": "2026-11-20",
+  "description": "Describe the incident",
+  "estimatedAmount": 1200.00
+}
+
+###
+
+GET {{backend_HostAddress}}/api/claims/{{claimId}}
+Authorization: Bearer {{accessToken}}
+Accept: application/json
+
+###
+
+GET {{backend_HostAddress}}/api/claims/{{claimId}}/history
+Authorization: Bearer {{accessToken}}
+Accept: application/json
+
+###
+
+GET {{backend_HostAddress}}/api/claims/{{claimId}}/information-requests
+Authorization: Bearer {{accessToken}}
+Accept: application/json
+
+###
+
+GET {{backend_HostAddress}}/api/claims/{{claimId}}/documents
+Authorization: Bearer {{accessToken}}
+Accept: application/json

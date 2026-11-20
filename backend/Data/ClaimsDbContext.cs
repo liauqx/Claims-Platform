@@ -10,6 +10,7 @@ public class ClaimsDbContext(DbContextOptions<ClaimsDbContext> options) : DbCont
     public DbSet<ClaimDocument> ClaimDocuments => Set<ClaimDocument>();
     public DbSet<ClaimHistory> ClaimHistories => Set<ClaimHistory>();
     public DbSet<ClaimInformationRequest> ClaimInformationRequests => Set<ClaimInformationRequest>();
+    public DbSet<Notification> Notifications => Set<Notification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -89,11 +90,30 @@ public class ClaimsDbContext(DbContextOptions<ClaimsDbContext> options) : DbCont
             entity.Property(request => request.ClaimId).HasColumnName("claim_id").IsRequired();
             entity.Property(request => request.RequestedBy).HasColumnName("requested_by").IsRequired();
             entity.Property(request => request.Description).HasColumnName("description").IsRequired();
+            entity.Property(request => request.Response).HasColumnName("response");
             entity.Property(request => request.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(20).HasDefaultValue(InformationRequestStatus.PENDING).IsRequired();
             entity.Property(request => request.CreatedAt).HasColumnName("created_at").HasColumnType("timestamp").HasDefaultValueSql("CURRENT_TIMESTAMP");
             entity.Property(request => request.RespondedAt).HasColumnName("responded_at").HasColumnType("timestamp");
             entity.HasOne(request => request.Claim).WithMany(claim => claim.InformationRequests).HasForeignKey(request => request.ClaimId);
             entity.HasOne(request => request.RequestedByUser).WithMany().HasForeignKey(request => request.RequestedBy);
+        });
+
+        modelBuilder.Entity<Notification>(entity =>
+        {
+            entity.ToTable("notifications");
+            entity.HasKey(notification => notification.Id);
+            entity.Property(notification => notification.Id).HasColumnName("id").HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(notification => notification.UserId).HasColumnName("user_id").IsRequired();
+            entity.Property(notification => notification.ClaimId).HasColumnName("claim_id");
+            entity.Property(notification => notification.Title).HasColumnName("title").HasMaxLength(150).IsRequired();
+            entity.Property(notification => notification.Message).HasColumnName("message").IsRequired();
+            entity.Property(notification => notification.IsRead).HasColumnName("is_read").HasDefaultValue(false).IsRequired();
+            entity.Property(notification => notification.CreatedAt).HasColumnName("created_at").HasColumnType("timestamp").HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(notification => notification.ReadAt).HasColumnName("read_at").HasColumnType("timestamp");
+            entity.HasIndex(notification => new { notification.UserId, notification.CreatedAt });
+            entity.HasIndex(notification => new { notification.UserId, notification.IsRead });
+            entity.HasOne<User>().WithMany().HasForeignKey(notification => notification.UserId);
+            entity.HasOne<Claim>().WithMany().HasForeignKey(notification => notification.ClaimId);
         });
     }
 }
