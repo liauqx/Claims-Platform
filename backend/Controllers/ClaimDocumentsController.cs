@@ -16,6 +16,7 @@ namespace backend.Controllers;
 public sealed class ClaimDocumentsController(
     ClaimsDbContext db,
     ClaimDocumentStorage documentStorage,
+    NotificationService notificationService,
     ILogger<ClaimDocumentsController> logger) : ControllerBase
 {
     [HttpGet]
@@ -106,6 +107,24 @@ public sealed class ClaimDocumentsController(
         try
         {
             db.ClaimDocuments.Add(document);
+            if (claim.AssignedOfficerId is { } assignedOfficerId)
+            {
+                notificationService.Add(
+                    assignedOfficerId,
+                    claim.Id,
+                    "New supporting document added",
+                    $"{fileName} was added to claim {claim.ClaimNumber}.");
+            }
+            else
+            {
+                await notificationService.AddToRoleAsync(
+                    UserRole.MANAGER,
+                    claim.Id,
+                    "New supporting document added",
+                    $"{fileName} was added to claim {claim.ClaimNumber}.",
+                    cancellationToken);
+            }
+
             await db.SaveChangesAsync(cancellationToken);
             persisted = true;
         }

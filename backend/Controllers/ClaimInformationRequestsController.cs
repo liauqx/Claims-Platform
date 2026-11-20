@@ -160,7 +160,12 @@ public sealed class ClaimInformationRequestsController(
             request.ClaimId,
             "Claimant response received",
             $"The claimant responded to an information request for claim {request.Claim.ClaimNumber}.");
-        await ResumeReviewIfNoPendingRequestsAsync(request.Claim, userId, request.Id, cancellationToken);
+        await ResumeReviewIfNoPendingRequestsAsync(
+            request.Claim,
+            userId,
+            request.Id,
+            request.RequestedBy,
+            cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
         return Ok(ToResponse(request));
     }
@@ -200,7 +205,12 @@ public sealed class ClaimInformationRequestsController(
             request.ClaimId,
             "Information request cancelled",
             $"An information request for claim {request.Claim.ClaimNumber} was cancelled.");
-        await ResumeReviewIfNoPendingRequestsAsync(request.Claim, userId, request.Id, cancellationToken);
+        await ResumeReviewIfNoPendingRequestsAsync(
+            request.Claim,
+            userId,
+            request.Id,
+            alreadyNotifiedUserId: null,
+            cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
         return Ok(ToResponse(request));
     }
@@ -209,6 +219,7 @@ public sealed class ClaimInformationRequestsController(
         ClaimEntity claim,
         Guid changedBy,
         Guid resolvedRequestId,
+        Guid? alreadyNotifiedUserId,
         CancellationToken cancellationToken)
     {
         if (claim.Status != ClaimStatus.MORE_INFO_REQUIRED ||
@@ -233,6 +244,16 @@ public sealed class ClaimInformationRequestsController(
             Remarks = "All pending information requests have been resolved.",
             CreatedAt = ClaimsController.CurrentDatabaseTimestamp()
         });
+
+        if (claim.AssignedOfficerId is { } assignedOfficerId &&
+            assignedOfficerId != alreadyNotifiedUserId)
+        {
+            notificationService.Add(
+                assignedOfficerId,
+                claim.Id,
+                "Claim ready for review",
+                $"All pending information requests for claim {claim.ClaimNumber} have been resolved.");
+        }
     }
 
     private static InformationRequestResponse ToResponse(ClaimInformationRequest request) =>

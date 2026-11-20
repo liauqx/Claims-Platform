@@ -100,6 +100,12 @@ public sealed class ClaimsController(
             Remarks = "Claim submitted.",
             CreatedAt = CurrentDatabaseTimestamp()
         });
+        await notificationService.AddToRoleAsync(
+            UserRole.MANAGER,
+            claim.Id,
+            "New claim submitted",
+            $"Claim {claim.ClaimNumber} is ready for assignment.",
+            cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
 
         var response = ToResponse(claim);
@@ -367,6 +373,7 @@ public sealed class ClaimsController(
             return BadRequest(new ProblemDetails { Title = "The selected user is not a claims officer." });
         }
 
+        var previousOfficerId = claim.AssignedOfficerId;
         claim.AssignedOfficerId = request.OfficerId;
         if (claim.Status == ClaimStatus.SUBMITTED)
         {
@@ -393,11 +400,23 @@ public sealed class ClaimsController(
                 $"Claim {claim.ClaimNumber} is now {ClaimStatus.UNDER_REVIEW}.");
         }
 
-        notificationService.Add(
-            request.OfficerId.Value,
-            claim.Id,
-            "Claim assigned to you",
-            $"Claim {claim.ClaimNumber} has been assigned to you.");
+        if (previousOfficerId != request.OfficerId)
+        {
+            if (previousOfficerId is { } oldOfficerId)
+            {
+                notificationService.Add(
+                    oldOfficerId,
+                    claim.Id,
+                    "Claim reassigned",
+                    $"Claim {claim.ClaimNumber} has been reassigned to another officer.");
+            }
+
+            notificationService.Add(
+                request.OfficerId.Value,
+                claim.Id,
+                "Claim assigned to you",
+                $"Claim {claim.ClaimNumber} has been assigned to you.");
+        }
         claim.UpdatedAt = CurrentDatabaseTimestamp();
         await db.SaveChangesAsync(cancellationToken);
         return Ok(ToResponse(claim));
